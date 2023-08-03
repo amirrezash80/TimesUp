@@ -21,16 +21,17 @@ class _ScattegoriesState extends State<Scattegories>
   bool isStarted = false;
   bool showQuestions = false;
   int _elapsedSeconds = 0;
-  int timerDuration = 5; // Default timer duration, you can change this value
-  int numberOfCategories = 10; // Default number of categories, you can change this value
+  int timerDuration = 60 ; // Default timer duration, you can change this value
+  int numberOfCategories = 6; // Default number of categories, you can change this value
 
   Timer? _timer;
-  int _secondsRemaining = 5;
+  int _secondsRemaining = 60;
   bool _isTimerActive = false;
   AnimationController? _animationController;
   Animation<double>? _spinAnimation;
   bool _isCardRevealed = false;
-  List<String> randomCategories = [];
+  List<String>randomCategories = EnglishCategories.getRandomCategories(number: 6);
+
 
   String generateRandomLetter() {
     final alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -97,6 +98,38 @@ class _ScattegoriesState extends State<Scattegories>
     });
   }
 
+  void _showInstructionsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Instructions'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('1. Press the "Start" button to begin the game.'),
+              Text('2. A random letter will be displayed at the top.'),
+              Text('3. Quickly answer the categories with words that start with the displayed letter.'),
+              Text('4. The timer will count down; finish before time runs out!'),
+              Text('5. If you need to adjust game settings, press the "Settings" button.'),
+              Text('6. Press "Stop" to end the game and see your results.'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
 
 
   void _showAlertDialog() {
@@ -104,8 +137,9 @@ class _ScattegoriesState extends State<Scattegories>
       context: context,
       barrierDismissible: false,
       builder: (context) {
+        _timer?.cancel();
         return AlertDialog(
-          title: Text('Time\'s Up!'),
+          title: Image.asset('assets/images/WhiteGoldLogo.png'),
           content: Text('Your time is up.'),
           actions: [
             TextButton(
@@ -143,8 +177,15 @@ class _ScattegoriesState extends State<Scattegories>
     return Scaffold(
       appBar: AppBar(
         backgroundColor: GoldColor,
+        centerTitle: true,
         title: Text('Scattegories'),
         actions: [
+          IconButton(
+            icon: Icon(Icons.help_outline), // Add the instruction icon
+            onPressed: () {
+              _showInstructionsDialog(); // Show instructions dialog
+            },
+          ),
           IconButton(
             icon: Icon(Icons.settings),
             onPressed: () {
@@ -154,15 +195,29 @@ class _ScattegoriesState extends State<Scattegories>
             },
           ),
         ],
-
       ),
+
       body: Padding(
         padding: const EdgeInsets.only(top: 50),
         child: Column(
           children: [
-            Text(
-              'Letter: $pickedLetter',
-              style: TextStyle(fontSize: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Letter: ',
+                  style: TextStyle(fontSize: 24),
+                ),
+                ImageFiltered(                        imageFilter: showQuestions
+                    ? ImageFilter.blur(sigmaX: 0, sigmaY: 0)
+                    : ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                  child: Text(pickedLetter,style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 30,
+                    color: GoldColor
+                  ),),
+                )
+              ],
             ),
             Center(
               child: AnimatedBuilder(
@@ -211,7 +266,7 @@ class _ScattegoriesState extends State<Scattegories>
                   ? '$_secondsRemaining seconds'
                   : 'Press Start!',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: GoldColor,
               ),
@@ -232,10 +287,17 @@ class _ScattegoriesState extends State<Scattegories>
                             ? ImageFilter.blur(sigmaX: 0, sigmaY: 0)
                             : ImageFilter.blur(sigmaX: 8, sigmaY: 8),
                         child: Container(
-                          height: 50,
+                          height: 65,
                           alignment: Alignment.center,
-                          child: Text(
-                            randomCategories[index],
+                          child: Wrap(
+                            children: [
+                              Text(
+                                randomCategories[index],style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold
+                              ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -244,34 +306,43 @@ class _ScattegoriesState extends State<Scattegories>
                 },
               ),
             ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  if (!isStarted) {
-                    isStarted = true;
-                    showQuestions = true;
-                    pickedLetter = generateRandomLetter();
-                    randomCategories = EnglishCategories.getRandomCategories(number: numberOfCategories);
-                    _isTimerActive = true;
-                    startTimer();
-                  } else {
-                    _timer?.cancel();
-                    _isTimerActive = false;
-                    _animationController?.reset();
-                    _secondsRemaining = timerDuration; // Reset the timer to user's input
-                    isStarted = false;
-                    showQuestions = false;
-                  }
-                });
-              },
-              style: ElevatedButton.styleFrom(
-                primary: isStarted ? Colors.red : Colors.green,
+            Container(
+              width: size.width * 0.9,
+              height: 45,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(30),
               ),
-              child: Text(isStarted ? 'Stop' : 'Start'),
+              child: ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    if (!isStarted) {
+                      isStarted = true;
+                      showQuestions = true;
+                      pickedLetter = generateRandomLetter();
+                      randomCategories = EnglishCategories.getRandomCategories(number: numberOfCategories);
+                      _isTimerActive = true;
+                      startTimer();
+                    } else {
+                      _showAlertDialog();
+                      _timer?.cancel();
+                      _isTimerActive = false;
+                      _animationController?.reset();
+                      _secondsRemaining = timerDuration; // Reset the timer to user's input
+                      isStarted = false;
+                      showQuestions = false;
+                    }
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  primary: isStarted ? Colors.red : Colors.green,
+                ),
+                child: Text(isStarted ? 'Stop' : 'Start' ,style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24
+                ),),
+              ),
             ),
-
-
-            SizedBox(height: 20),
           ],
         ),
       ),

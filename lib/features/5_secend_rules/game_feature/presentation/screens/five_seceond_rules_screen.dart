@@ -69,6 +69,41 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
     });
   }
 
+  void _showInstructionsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Instructions'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('1. Press the "Start" button to begin the game.'),
+              Text('2. A random question will appear at the center.'),
+              Text('3. Quickly tap the card to reveal the question.'),
+              Text('4. You have 5 seconds to answer.'),
+              Text('5. After 5 seconds, tap "Yes" if the answer is correct.'),
+              Text('6. If the answer is incorrect or the time is up, tap "No".'),
+              Text('7. The timer and question card can be stopped or resumed by tapping the "Start" button.'),
+              Text('8. Players take turns, and their points are tracked.'),
+              Text('9. To see the points, tap "See The Points".'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
   void _showAlertDialog() {
     final currentPlayerName =
     context.read<PlayersBloc>().getCurrentPlayerName();
@@ -323,8 +358,14 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
                                   ],
                                 ),
                                 child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Spacer(), // Push the content to the top
+                                    IconButton(
+                                      icon: Icon(Icons.help_outline , size: 40,color: LightGoldColor),
+                                      onPressed: () {
+                                        _showInstructionsDialog();
+                                      },
+                                    ),
                                     Align(
                                       alignment: Alignment.center,
                                       child: Text(
@@ -332,18 +373,17 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
                                         style: TextStyle(
                                           fontSize: 20,
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.white,
+                                          color: LightGoldColor,
                                         ),
                                       ),
                                     ),
-                                    Spacer(), // Push the content to the middle
 
                                     // Gesture Detector at the bottom
                                     ElevatedButton(
                                       child: Text("See The Points"),
                                       onPressed: () => Navigator.pushNamed(context, "/Points"),
                                       style: ElevatedButton.styleFrom(
-                                        primary: Colors.teal,
+                                        primary: LightGoldColor,
                                       ),
                                     ),
                                   ],
