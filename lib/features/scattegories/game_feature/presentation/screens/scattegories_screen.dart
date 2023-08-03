@@ -1,8 +1,8 @@
-import 'dart:ui';
 import 'dart:async';
+import 'dart:ui';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
-import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:scattegories/core/utils/categories/english_questions.dart';
 import 'package:scattegories/core/utils/constants.dart';
 
@@ -21,8 +21,9 @@ class _ScattegoriesState extends State<Scattegories>
   bool isStarted = false;
   bool showQuestions = false;
   int _elapsedSeconds = 0;
-  int timerDuration = 60 ; // Default timer duration, you can change this value
-  int numberOfCategories = 6; // Default number of categories, you can change this value
+  int timerDuration = 60; // Default timer duration, you can change this value
+  int numberOfCategories =
+      6; // Default number of categories, you can change this value
 
   Timer? _timer;
   int _secondsRemaining = 60;
@@ -30,8 +31,11 @@ class _ScattegoriesState extends State<Scattegories>
   AnimationController? _animationController;
   Animation<double>? _spinAnimation;
   bool _isCardRevealed = false;
-  List<String>randomCategories = EnglishCategories.getRandomCategories(number: 6);
-
+  List<String> randomCategories =
+      EnglishCategories.getRandomCategories(number: 6);
+  late AudioPlayer _audioPlayer;
+  late AudioPlayer _tictocPlayer;
+  bool _isMuted = false;
 
   String generateRandomLetter() {
     final alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -40,8 +44,11 @@ class _ScattegoriesState extends State<Scattegories>
   }
 
   @override
+  @override
   void initState() {
     super.initState();
+    _audioPlayer = AudioPlayer();
+    _tictocPlayer = AudioPlayer(); // Initialize _tictocPlayer
     _animationController =
         AnimationController(vsync: this, duration: const Duration(seconds: 2));
     _animationController?.addListener(() {
@@ -53,18 +60,20 @@ class _ScattegoriesState extends State<Scattegories>
       end: 1.0,
     )?.animate(_animationController!);
   }
+
   void updateTimerDuration(int newDuration) {
     setState(() {
       timerDuration = newDuration;
     });
   }
 
-  // Function to update number of categories
+// Function to update number of categories
   void updateNumberOfCategories(int newNumberOfCategories) {
     setState(() {
       numberOfCategories = newNumberOfCategories;
     });
   }
+
   void updateSettings(int newTimerDuration, int newNumberOfCategories) {
     setState(() {
       timerDuration = newTimerDuration;
@@ -73,7 +82,6 @@ class _ScattegoriesState extends State<Scattegories>
     });
   }
 
-
   void startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
@@ -81,17 +89,18 @@ class _ScattegoriesState extends State<Scattegories>
           _secondsRemaining--;
           _elapsedSeconds++;
         } else {
-          // Timer is done, show alert dialog
+// Timer is done, show alert dialog
           _isTimerActive = false;
           _animationController?.reset();
           _isCardRevealed = false;
 
-          // Generate a new set of random categories based on the user's input
-          randomCategories = EnglishCategories.getRandomCategories(number: numberOfCategories);
+// Generate a new set of random categories based on the user's input
+          randomCategories =
+              EnglishCategories.getRandomCategories(number: numberOfCategories);
 
           _showAlertDialog();
 
-          // Reset the timer
+// Reset the timer
           _secondsRemaining = timerDuration;
         }
       });
@@ -110,9 +119,12 @@ class _ScattegoriesState extends State<Scattegories>
             children: [
               Text('1. Press the "Start" button to begin the game.'),
               Text('2. A random letter will be displayed at the top.'),
-              Text('3. Quickly answer the categories with words that start with the displayed letter.'),
-              Text('4. The timer will count down; finish before time runs out!'),
-              Text('5. If you need to adjust game settings, press the "Settings" button.'),
+              Text(
+                  '3. Quickly answer the categories with words that start with the displayed letter.'),
+              Text(
+                  '4. The timer will count down; finish before time runs out!'),
+              Text(
+                  '5. If you need to adjust game settings, press the "Settings" button.'),
               Text('6. Press "Stop" to end the game and see your results.'),
             ],
           ),
@@ -129,14 +141,14 @@ class _ScattegoriesState extends State<Scattegories>
     );
   }
 
-
-
-
   void _showAlertDialog() {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) {
+        _tictocPlayer.stop();
+        _playTickTockSound(false);
+        _playClockSound(); // Play the clock sound here
         _timer?.cancel();
         return AlertDialog(
           title: Image.asset('assets/images/WhiteGoldLogo.png'),
@@ -144,6 +156,7 @@ class _ScattegoriesState extends State<Scattegories>
           actions: [
             TextButton(
               onPressed: () {
+                _audioPlayer.stop();
                 Navigator.of(context).pop(); // Close the dialog
               },
               child: Text('OK'),
@@ -152,7 +165,9 @@ class _ScattegoriesState extends State<Scattegories>
         );
       },
     ).then((_) {
-      // Move the state-modifying code here
+// Move the state-modifying code here
+      _playTickTockSound(
+          false); // Stop the tick-tock sound when the dialog is dismissed
       _timer?.cancel();
       _isTimerActive = false;
       _animationController?.reset();
@@ -163,9 +178,31 @@ class _ScattegoriesState extends State<Scattegories>
     });
   }
 
+  void _playClockSound() async {
+    _audioPlayer.dispose(); // Dispose of the previous audio player
+    _audioPlayer = AudioPlayer(); // Create a new audio player instance
+    await _audioPlayer
+        .play(AssetSource('sounds/Counter_effect.wav')); // Play the clock sound
+  }
+
+  Future<void> _playTickTockSound(bool play) async {
+    if (play) {
+      if (_tictocPlayer.state == PlayerState.stopped) {
+        await _tictocPlayer.setSourceAsset('sounds/tick_tock.wav');
+        await _tictocPlayer.setReleaseMode(ReleaseMode.loop);
+        await _tictocPlayer.play(AssetSource('sounds/tick_tock.wav'));
+      }
+    } else {
+      if (_tictocPlayer.state == PlayerState.playing) {
+        await _tictocPlayer.stop();
+      }
+    }
+  }
 
   @override
   void dispose() {
+    _audioPlayer.dispose();
+    _tictocPlayer.dispose();
     _timer?.cancel();
     _animationController?.dispose();
     super.dispose();
@@ -189,14 +226,14 @@ class _ScattegoriesState extends State<Scattegories>
           IconButton(
             icon: Icon(Icons.settings),
             onPressed: () {
-              showSettingsDialog(context, (newTimerDuration, newNumberOfCategories) {
+              showSettingsDialog(context,
+                  (newTimerDuration, newNumberOfCategories) {
                 updateSettings(newTimerDuration, newNumberOfCategories);
               });
             },
           ),
         ],
       ),
-
       body: Padding(
         padding: const EdgeInsets.only(top: 50),
         child: Column(
@@ -208,14 +245,17 @@ class _ScattegoriesState extends State<Scattegories>
                   'Letter: ',
                   style: TextStyle(fontSize: 24),
                 ),
-                ImageFiltered(                        imageFilter: showQuestions
-                    ? ImageFilter.blur(sigmaX: 0, sigmaY: 0)
-                    : ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                  child: Text(pickedLetter,style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 30,
-                    color: GoldColor
-                  ),),
+                ImageFiltered(
+                  imageFilter: showQuestions
+                      ? ImageFilter.blur(sigmaX: 0, sigmaY: 0)
+                      : ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                  child: Text(
+                    pickedLetter,
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 30,
+                        color: GoldColor),
+                  ),
                 )
               ],
             ),
@@ -223,10 +263,11 @@ class _ScattegoriesState extends State<Scattegories>
               child: AnimatedBuilder(
                 animation: _animationController!,
                 builder: (context, child) {
-                  double lineWidth = (size.width - 80) /
-                      2; // Adjust for clock icon width (80)
+                  double lineWidth =
+                      (size.width - 80) / 2; // Adjust for clock icon width (80)
                   if (_isTimerActive && _secondsRemaining > 0) {
-                    lineWidth *= (_secondsRemaining / timerDuration); // Use timerDuration instead of 5
+                    lineWidth *= (_secondsRemaining /
+                        timerDuration); // Use timerDuration instead of 5
                   } else {
                     lineWidth = 0.0;
                   }
@@ -237,7 +278,7 @@ class _ScattegoriesState extends State<Scattegories>
                       Container(
                         width: lineWidth,
                         height: 12,
-                        // Adjust line thickness here
+// Adjust line thickness here
                         color: LightGoldColor,
                       ),
                       RotationTransition(
@@ -251,20 +292,17 @@ class _ScattegoriesState extends State<Scattegories>
                       Container(
                         width: lineWidth,
                         height: 12,
-                        // Adjust line thickness here
+// Adjust line thickness here
                         color: LightGoldColor,
                       ),
                     ],
                   );
                 },
               ),
-
             ),
             const SizedBox(height: 10),
             Text(
-              _isTimerActive
-                  ? '$_secondsRemaining seconds'
-                  : 'Press Start!',
+              _isTimerActive ? '$_secondsRemaining seconds' : 'Press Start!',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -292,10 +330,9 @@ class _ScattegoriesState extends State<Scattegories>
                           child: Wrap(
                             children: [
                               Text(
-                                randomCategories[index],style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold
-                              ),
+                                randomCategories[index],
+                                style: TextStyle(
+                                    fontSize: 24, fontWeight: FontWeight.bold),
                               ),
                             ],
                           ),
@@ -306,6 +343,7 @@ class _ScattegoriesState extends State<Scattegories>
                 },
               ),
             ),
+            SizedBox(height: 5),
             Container(
               width: size.width * 0.9,
               height: 45,
@@ -318,17 +356,21 @@ class _ScattegoriesState extends State<Scattegories>
                   setState(() {
                     if (!isStarted) {
                       isStarted = true;
+                      _playTickTockSound(true);
                       showQuestions = true;
                       pickedLetter = generateRandomLetter();
-                      randomCategories = EnglishCategories.getRandomCategories(number: numberOfCategories);
+                      randomCategories = EnglishCategories.getRandomCategories(
+                          number: numberOfCategories);
                       _isTimerActive = true;
                       startTimer();
                     } else {
                       _showAlertDialog();
+                      _tictocPlayer.stop();
                       _timer?.cancel();
                       _isTimerActive = false;
                       _animationController?.reset();
-                      _secondsRemaining = timerDuration; // Reset the timer to user's input
+                      _secondsRemaining =
+                          timerDuration; // Reset the timer to user's input
                       isStarted = false;
                       showQuestions = false;
                     }
@@ -337,10 +379,10 @@ class _ScattegoriesState extends State<Scattegories>
                 style: ElevatedButton.styleFrom(
                   primary: isStarted ? Colors.red : Colors.green,
                 ),
-                child: Text(isStarted ? 'Stop' : 'Start' ,style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24
-                ),),
+                child: Text(
+                  isStarted ? 'Stop' : 'Start',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+                ),
               ),
             ),
           ],
@@ -349,4 +391,3 @@ class _ScattegoriesState extends State<Scattegories>
     );
   }
 }
-

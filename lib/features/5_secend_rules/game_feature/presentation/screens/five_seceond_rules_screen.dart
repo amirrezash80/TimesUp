@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:animated_text_kit/animated_text_kit.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:scattegories/core/utils/constants.dart';
 import 'package:scattegories/features/5_secend_rules/player_management_feature/data/models/player_class.dart';
+import 'package:flutter/services.dart'; // Import this package
 
 import '../../../../../core/utils/categories/english_questions.dart';
 import '../../../player_management_feature/presentation/bloc/player_bloc.dart';
@@ -26,10 +28,14 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
   List<String> randomCategories = [];
   bool _isCardRevealed = false;
   Animation<double>? _spinAnimation;
+  late AudioPlayer _audioPlayer;
+  late AudioPlayer _tictocPlayer;
 
   @override
   void initState() {
     super.initState();
+    _audioPlayer = AudioPlayer();
+    _tictocPlayer = AudioPlayer();
     _animationController =
         AnimationController(vsync: this, duration: const Duration(seconds: 2));
     _animationController?.addListener(() {
@@ -50,8 +56,11 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
       setState(() {
         if (_secondsRemaining > 0) {
           _secondsRemaining--;
+          _playTickTockSound(true); // Play tick-tock sound while timer is active
         } else {
           // Timer is done, show alert dialog
+          _playTickTockSound(false); // Stop tick-tock sound
+          _tictocPlayer.stop(); // Dispose of the tick-tock audio player
           _isTimerActive = false;
           _elapsedSeconds = 0;
           _animationController?.reset();
@@ -84,8 +93,10 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
               Text('3. Quickly tap the card to reveal the question.'),
               Text('4. You have 5 seconds to answer.'),
               Text('5. After 5 seconds, tap "Yes" if the answer is correct.'),
-              Text('6. If the answer is incorrect or the time is up, tap "No".'),
-              Text('7. The timer and question card can be stopped or resumed by tapping the "Start" button.'),
+              Text(
+                  '6. If the answer is incorrect or the time is up, tap "No".'),
+              Text(
+                  '7. The timer and question card can be stopped or resumed by tapping the "Start" button.'),
               Text('8. Players take turns, and their points are tracked.'),
               Text('9. To see the points, tap "See The Points".'),
             ],
@@ -103,57 +114,77 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
     );
   }
 
-
   void _showAlertDialog() {
-    final currentPlayerName =
-    context.read<PlayersBloc>().getCurrentPlayerName();
+    final currentPlayerName = context.read<PlayersBloc>().getCurrentPlayerName();
 
     showDialog(
       context: context,
       barrierDismissible: false,
-      // Prevent dismissing the dialog by tapping outside
       builder: (context) {
         _timer?.cancel();
+        _playClockSound(); // Play the clock sound here
         return AlertDialog(
           title: Image.asset('assets/images/WhiteGoldLogo.png'),
-          content: Text(
-              'Did $currentPlayerName get the answer right within 5 seconds?'),
+          content: Text('Did $currentPlayerName get the answer right within 5 seconds?'),
           actions: [
             TextButton(
               onPressed: () {
                 context.read<PlayersBloc>().addPlayerPoint();
+                _audioPlayer.stop(); // Stop the audio player
                 Navigator.pop(context);
-                // Handle the user's response here (e.g., correct or incorrect answer)
                 _isTimerActive = false; // Set the timer as inactive
                 _elapsedSeconds = 0; // Reset elapsed seconds
                 _animationController?.reset();
-                context
-                    .read<PlayersBloc>()
-                    .moveToNextPlayer(); // Move to the next player
+                context.read<PlayersBloc>().moveToNextPlayer(); // Move to the next player
               },
               child: const Text('Yes'),
             ),
             TextButton(
               onPressed: () {
+                _audioPlayer.stop(); // Stop the audio player
                 Navigator.pop(context);
-                // Handle the user's response here (e.g., correct or incorrect answer)
                 _isTimerActive = false; // Set the timer as inactive
                 _elapsedSeconds = 0; // Reset elapsed seconds
                 _animationController?.reset();
-                context
-                    .read<PlayersBloc>()
-                    .moveToNextPlayer(); // Move to the next player
+                context.read<PlayersBloc>().moveToNextPlayer(); // Move to the next player
               },
               child: const Text('No'),
             ),
           ],
         );
       },
-    );
+    ).then((value) {
+      _playTickTockSound(false); // Stop the tick-tock sound when the dialog is dismissed
+    });
   }
+
+  void _playClockSound() async {
+    _audioPlayer.dispose(); // Dispose of the previous audio player
+    _audioPlayer = AudioPlayer(); // Create a new audio player instance
+    await _audioPlayer.play(AssetSource('sounds/Counter_effect.wav')); // Play the clock sound
+  }
+
+
+  void _playTickTockSound(bool play) async {
+    if (play) {
+      if (_tictocPlayer.state == PlayerState.stopped) {
+        await _tictocPlayer.seek(Duration.zero); // Reset the audio position
+        await _tictocPlayer.play(AssetSource('sounds/tick_tock.wav')); // Play the preloaded tick-tock sound
+      }
+    } else {
+      if (_tictocPlayer.state == PlayerState.playing) {
+        await _tictocPlayer.stop(); // Stop the tick-tock sound
+        await _tictocPlayer.release(); // Release the tick-tock sound
+      }
+    }
+  }
+
+
 
   @override
   void dispose() {
+    _audioPlayer.dispose();
+    _tictocPlayer.dispose();// Dispose the audio player when the widget is disposed
     _timer?.cancel();
     _animationController?.dispose();
     super.dispose();
@@ -176,7 +207,7 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
                   );
                 }
                 final currentPlayerName =
-                context.watch<PlayersBloc>().getCurrentPlayerName();
+                    context.watch<PlayersBloc>().getCurrentPlayerName();
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -233,8 +264,7 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
                                   if (_isTimerActive) {
                                     // Calculate the line width based on the animation progress
                                     lineWidth *=
-                                    (1 - _animationController!.value);
-
+                                        (1 - _animationController!.value);
                                   }
                                   return Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
@@ -292,103 +322,111 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
                               duration: const Duration(milliseconds: 500),
                               child: _isCardRevealed
                                   ? Container(
-                                key: const ValueKey(1),
-                                width: size.width * 0.7,
-                                height: size.height * 0.5,
-                                alignment: Alignment.center,
-                                padding: const EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  color: GoldColor,
-                                  borderRadius: BorderRadius.circular(10),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.3),
-                                      spreadRadius: 2,
-                                      blurRadius: 5,
-                                      offset: const Offset(0, 3),
-                                    ),
-                                  ],
-                                ),
-                                child: DefaultTextStyle(
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 30,
-                                  ),
-                                  child: Wrap(
-                                    children: [
-                                      const Center(
-                                        child: Text("Name 3"),
+                                      key: const ValueKey(1),
+                                      width: size.width * 0.7,
+                                      height: size.height * 0.5,
+                                      alignment: Alignment.center,
+                                      padding: const EdgeInsets.all(20),
+                                      decoration: BoxDecoration(
+                                        color: GoldColor,
+                                        borderRadius: BorderRadius.circular(10),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color:
+                                                Colors.black.withOpacity(0.3),
+                                            spreadRadius: 2,
+                                            blurRadius: 5,
+                                            offset: const Offset(0, 3),
+                                          ),
+                                        ],
                                       ),
-                                      const Divider(),
-                                      Align(
-                                        alignment: Alignment.center,
-                                        child: AnimatedTextKit(
-                                          repeatForever: true,
-                                          isRepeatingAnimation: true,
-                                          animatedTexts: [
-                                            ColorizeAnimatedText(
-                                              randomCategories.first,
-                                              textStyle: colorizeTextStyle,
-                                              colors: colorizeColors,
+                                      child: DefaultTextStyle(
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 30,
+                                        ),
+                                        child: Wrap(
+                                          children: [
+                                            const Center(
+                                              child: Text("Name 3"),
+                                            ),
+                                            const Divider(),
+                                            Align(
+                                              alignment: Alignment.center,
+                                              child: AnimatedTextKit(
+                                                repeatForever: true,
+                                                isRepeatingAnimation: true,
+                                                animatedTexts: [
+                                                  ColorizeAnimatedText(
+                                                    randomCategories.first,
+                                                    textStyle:
+                                                        colorizeTextStyle,
+                                                    colors: colorizeColors,
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ],
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                ),
-                              )
+                                    )
                                   : Container(
-                                key: const ValueKey(2),
-                                width: size.width * 0.7,
-                                height: size.height * 0.5,
-                                alignment: Alignment.center,
-                                padding: const EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  color: Colors.brown,
-                                  borderRadius: BorderRadius.circular(10),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.3),
-                                      spreadRadius: 2,
-                                      blurRadius: 5,
-                                      offset: const Offset(0, 3),
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    IconButton(
-                                      icon: Icon(Icons.help_outline , size: 40,color: LightGoldColor),
-                                      onPressed: () {
-                                        _showInstructionsDialog();
-                                      },
-                                    ),
-                                    Align(
+                                      key: const ValueKey(2),
+                                      width: size.width * 0.7,
+                                      height: size.height * 0.5,
                                       alignment: Alignment.center,
-                                      child: Text(
-                                        "Tap To Reveal The Card",
-                                        style: TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                          color: LightGoldColor,
-                                        ),
+                                      padding: const EdgeInsets.all(20),
+                                      decoration: BoxDecoration(
+                                        color: Colors.brown,
+                                        borderRadius: BorderRadius.circular(10),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color:
+                                                Colors.black.withOpacity(0.3),
+                                            spreadRadius: 2,
+                                            blurRadius: 5,
+                                            offset: const Offset(0, 3),
+                                          ),
+                                        ],
                                       ),
-                                    ),
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          IconButton(
+                                            icon: Icon(Icons.help_outline,
+                                                size: 40,
+                                                color: LightGoldColor),
+                                            onPressed: () {
+                                              _showInstructionsDialog();
+                                            },
+                                          ),
+                                          Align(
+                                            alignment: Alignment.center,
+                                            child: Text(
+                                              "Tap To Reveal The Card",
+                                              style: TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                                color: LightGoldColor,
+                                              ),
+                                            ),
+                                          ),
 
-                                    // Gesture Detector at the bottom
-                                    ElevatedButton(
-                                      child: Text("See The Points"),
-                                      onPressed: () => Navigator.pushNamed(context, "/Points"),
-                                      style: ElevatedButton.styleFrom(
-                                        primary: LightGoldColor,
+                                          // Gesture Detector at the bottom
+                                          ElevatedButton(
+                                            child: Text("See The Points"),
+                                            onPressed: () =>
+                                                Navigator.pushNamed(
+                                                    context, "/Points"),
+                                            style: ElevatedButton.styleFrom(
+                                              primary: LightGoldColor,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                  ],
-                                ),
-                              ),
                             ),
                           ),
                         ],
@@ -408,6 +446,8 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
                             randomCategories =
                                 EnglishCategories.getRandomCategories(
                                     number: 1);
+
+                            _tictocPlayer.stop();
                             _isCardRevealed = false;
                             _timer?.cancel();
                             _secondsRemaining = 0;
@@ -418,6 +458,7 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
                           } else {
                             // Start or resume the timer
                             _isTimerActive = true;
+                            _playTickTockSound(true);
                             if (_secondsRemaining == 0) {
                               _secondsRemaining = 5 - _elapsedSeconds;
                             }
@@ -447,4 +488,3 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
     );
   }
 }
-

@@ -45,6 +45,7 @@ dependencies:
   flutter_fortune_wheel: ^1.3.0
   kbspinningwheel: ^1.0.3
   soundpool: ^2.3.0
+  audioplayers: ^5.0.0
 
 
 dev_dependencies:
@@ -81,6 +82,8 @@ flutter:
     - assets/images/roulette-8-300.png
     - assets/images/roulette-center-300.png
     - assets/images/wheel-6-300.png
+    - assets/sounds/Counter_effect.wav
+    - assets/sounds/tick_tock.wav
 
 
     #   - images/a_dot_ham.jpeg
