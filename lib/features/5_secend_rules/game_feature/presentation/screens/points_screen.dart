@@ -1,78 +1,91 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get/get.dart';
 
 import '../../../../../core/utils/constants.dart';
-import '../../../player_management_feature/data/models/player_class.dart';
-import '../../../player_management_feature/presentation/bloc/player_bloc.dart';
+import '../../../player_management_feature/presentation/getx/player_getx.dart';
 
-class PointsPage extends StatelessWidget {
+class PointsScreen extends StatelessWidget {
+  final PlayersController _playersController = Get.find<PlayersController>();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
         backgroundColor: GoldColor,
-        title: Text('Player Points'),
+        title: const Text('Player Points' , style: TextStyle(color: Colors.black),),
         actions: [
           IconButton(
-            icon: Icon(
+            padding: EdgeInsets.only(right: 5),
+            icon: const Icon(
               Icons.restore,
-              size: 30,
+              size: 35,
             ),
             onPressed: () {
-              context.read<PlayersBloc>().resetAllPlayerPoints();
+              _playersController.resetAllPlayerPoints();
             },
           ),
         ],
       ),
-      body: BlocBuilder<PlayersBloc, List<PlayersInfo>>(
-        builder: (context, playersList) {
-          if (playersList.isEmpty) {
-            return Center(
-              child: Text('No players available'),
-            );
-          }
-          return Padding(
-            padding: const EdgeInsets.only(top: 50),
-            child: ListView.builder(
+      body: Center(
+        child: GetX<PlayersController>(
+          builder: (controller) {
+            final playersList = controller.playersList;
+
+            if (playersList.isEmpty) {
+              return const Center(
+                child: Text(
+                  'No players available',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              );
+            }
+            return ListView.builder(
               itemCount: playersList.length,
               itemBuilder: (context, index) {
                 final player = playersList[index];
-                return ListTile(
-                  title: Card(
-                    color: GoldColor.withOpacity(0.6),
-                    elevation: 4,
-                    child: Container(
-                      height: 50,
-                      alignment: Alignment.center,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              player.name,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
-                            ),
-                            Text(
-                              'Points: ${player.points}',
-                              style: TextStyle(
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        ),
+                return Container(
+                  margin: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: LightGoldColor,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.5),
+                        blurRadius: 4,
+                        spreadRadius: 1,
+                        offset: const Offset(0, 2),
                       ),
+                    ],
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.all(16),
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          player.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        Text(
+                          'Points: ${player.points}',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 );
               },
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

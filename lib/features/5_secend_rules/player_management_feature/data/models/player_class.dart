@@ -1,7 +1,10 @@
+import 'package:uuid/uuid.dart';
 
-class PlayersInfo{
-  final String name;
-  int points = 0 ;
+class PlayersInfo {
+  final String id; // Add a unique ID for each player
+  String name;
+  int points = 0;
 
-  PlayersInfo({required this.name , required this.points});
+  PlayersInfo({String? id, required this.name, required this.points})
+      : id = id ?? Uuid().v4(); // Generate a unique ID if not provided
 }

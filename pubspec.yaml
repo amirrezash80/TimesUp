@@ -46,6 +46,7 @@ dependencies:
   kbspinningwheel: ^1.0.3
   soundpool: ^2.3.0
   audioplayers: ^5.0.0
+  get: ^4.6.5
 
 
 dev_dependencies:

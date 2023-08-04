@@ -8,9 +8,10 @@ import 'package:scattegories/home/home_page.dart';
 import 'features/5_secend_rules/game_feature/presentation/screens/five_seceond_rules_screen.dart';
 import 'features/5_secend_rules/game_feature/presentation/screens/points_screen.dart';
 import 'features/5_secend_rules/player_management_feature/presentation/bloc/player_bloc.dart';
+import 'features/5_secend_rules/player_management_feature/presentation/getx/player_getx.dart';
 import 'features/scattegories/game_feature/presentation/screens/scattegories_screen.dart';
 import 'features/scattegories/letter_picker_wheel/presentation/letter_picker_screen.dart';
-
+import 'package:get/get.dart';
 void main() {
   runApp(BlocProvider(
 
@@ -24,7 +25,8 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    Get.put(PlayersController());
+    return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Time\'s Up!',
       localizationsDelegates: [
@@ -46,7 +48,7 @@ class MyApp extends StatelessWidget {
         '/5second_rules': (context) => const FiveSecondRules(),
         '/scattegories': (context) => const Scattegories(),
         '/Players': (context) => Players(),
-        '/Points' : (context) => PointsPage(),
+        '/Points' : (context) => PointsScreen(),
         '/LetterPicker' : (context) => Scattegories()
       },
 

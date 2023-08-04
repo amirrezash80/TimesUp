@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,27 +11,36 @@ class PlayersBloc extends Cubit<List<PlayersInfo>> {
 
   int _currentPlayerIndex = 0;
 
-
   Future<void> initPlayers() async {
     final prefs = await SharedPreferences.getInstance();
-    final playerNames = prefs.getStringList('playerNames') ?? ['Player 1', 'Player 2'];
-    final playerList = playerNames.map((name) => PlayersInfo(name: name, points: 0)).toList();
+    final playerNames =
+        prefs.getStringList('playerNames') ?? ['Player 1', 'Player 2'];
+    final playerList =
+    playerNames.map((name) => PlayersInfo(name: name, points: 0)).toList();
     emit(playerList);
-
   }
+
+  List<String> getPlayersNames() {
+    return state.map((player) => player.name).toList();
+  }
+
 
   void addPlayer() {
-    final updatedList = [...state, PlayersInfo(name: 'Player ${state.length + 1}', points: 0)];
+    final updatedList = [
+      ...state,
+      PlayersInfo(name: 'Player ${state.length + 1}', points: 0)
+    ];
     // _currentPlayerIndex = updatedList.length - 1; // Update the current player index
-    emit(updatedList);
+      emit(updatedList);
     _savePlayers(updatedList);
+    initPlayers();
   }
-
 
   void updatePlayerName(int index, String newName) {
     if (index >= 0 && index < state.length) {
       List<PlayersInfo> updatedList = List.from(state);
-      updatedList[index] = PlayersInfo(name: newName, points: updatedList[index].points);
+      updatedList[index] =
+          PlayersInfo(name: newName, points: updatedList[index].points);
       emit(updatedList);
       _savePlayers(updatedList);
     }
@@ -52,20 +60,19 @@ class PlayersBloc extends Cubit<List<PlayersInfo>> {
     prefs.setStringList('playerNames', playerNames);
   }
 
-  void removePlayer(int index, BuildContext context) {
+  void removePlayer(String playerId, BuildContext context) {
     try {
-      if (index >= 0 && index < state.length) {
-        List<PlayersInfo> updatedList = List.from(state);
-        updatedList.removeAt(index);
+      List<PlayersInfo> updatedList = List.from(state);
+      updatedList.removeWhere((player) => player.id == playerId);
 
-        // Update _currentPlayerIndex if needed
-        if (_currentPlayerIndex >= updatedList.length) {
-          _currentPlayerIndex = updatedList.length - 1;
-        }
-
-        emit(updatedList);
-        _savePlayers(updatedList);
+      // Update _currentPlayerIndex if needed
+      if (_currentPlayerIndex >= updatedList.length) {
+        _currentPlayerIndex = updatedList.isNotEmpty ? 0 : -1;
       }
+
+      emit(updatedList);
+      _savePlayers(updatedList);
+      initPlayers();
     } catch (e) {
       showDialog(
         context: context,
@@ -88,14 +95,11 @@ class PlayersBloc extends Cubit<List<PlayersInfo>> {
   }
 
 
-
-
-
-
   void moveToNextPlayer() {
     _currentPlayerIndex++;
     if (_currentPlayerIndex >= state.length) {
-      _currentPlayerIndex = 0; // Start from the first player if all players have played once
+      _currentPlayerIndex =
+          0; // Start from the first player if all players have played once
     }
   }
 
@@ -105,10 +109,9 @@ class PlayersBloc extends Cubit<List<PlayersInfo>> {
     } else {
       return state[_currentPlayerIndex].name;
     }
-
   }
 
-  addPlayerPoint(){
+  addPlayerPoint() {
     if (state.isEmpty) {
       throw Exception("No players available");
     } else {
@@ -116,8 +119,7 @@ class PlayersBloc extends Cubit<List<PlayersInfo>> {
     }
   }
 
-  getPlayersPoint()
-  {
+  getPlayersPoint() {
     if (state.isEmpty) {
       throw Exception("No players available");
     } else {
@@ -126,11 +128,11 @@ class PlayersBloc extends Cubit<List<PlayersInfo>> {
   }
 
   void resetAllPlayerPoints() {
-    final updatedList = state.map((player) => PlayersInfo(name: player.name, points: 0)).toList();
+    final updatedList = state
+        .map((player) => PlayersInfo(name: player.name, points: 0))
+        .toList();
     emit(updatedList);
     _savePlayers(updatedList);
     _currentPlayerIndex = 0;
   }
-
-
 }

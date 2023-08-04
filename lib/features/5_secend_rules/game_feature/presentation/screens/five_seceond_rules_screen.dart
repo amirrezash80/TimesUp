@@ -3,13 +3,11 @@ import 'dart:async';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get/get.dart';
 import 'package:scattegories/core/utils/constants.dart';
-import 'package:scattegories/features/5_secend_rules/player_management_feature/data/models/player_class.dart';
-import 'package:flutter/services.dart'; // Import this package
 
 import '../../../../../core/utils/categories/english_questions.dart';
-import '../../../player_management_feature/presentation/bloc/player_bloc.dart';
+import '../../../player_management_feature/presentation/getx/player_getx.dart';
 
 class FiveSecondRules extends StatefulWidget {
   const FiveSecondRules({Key? key}) : super(key: key);
@@ -56,7 +54,8 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
       setState(() {
         if (_secondsRemaining > 0) {
           _secondsRemaining--;
-          _playTickTockSound(true); // Play tick-tock sound while timer is active
+          _playTickTockSound(
+              true); // Play tick-tock sound while timer is active
         } else {
           // Timer is done, show alert dialog
           _playTickTockSound(false); // Stop tick-tock sound
@@ -83,8 +82,8 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Instructions'),
-          content: Column(
+          title: const Text('Instructions'),
+          content: const Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -98,7 +97,7 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
               Text(
                   '7. The timer and question card can be stopped or resumed by tapping the "Start" button.'),
               Text('8. Players take turns, and their points are tracked.'),
-              Text('9. To see the points, tap "See The Points".'),
+              Text('9. To see the points, tap "Points".'),
             ],
           ),
           actions: [
@@ -106,7 +105,7 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text('OK'),
+              child: const Text('OK'),
             ),
           ],
         );
@@ -115,38 +114,42 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
   }
 
   void _showAlertDialog() {
-    final currentPlayerName = context.read<PlayersBloc>().getCurrentPlayerName();
+    final currentPlayerName = Get.find<PlayersController>()
+        .getCurrentPlayerName(); // Use Get.find to access the PlayersController
 
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) {
         _timer?.cancel();
-        _playClockSound(); // Play the clock sound here
+        _playClockSound();
         return AlertDialog(
           title: Image.asset('assets/images/WhiteGoldLogo.png'),
-          content: Text('Did $currentPlayerName get the answer right within 5 seconds?'),
+          content: Text(
+              'Did $currentPlayerName get the answer right within 5 seconds?'),
           actions: [
             TextButton(
               onPressed: () {
-                context.read<PlayersBloc>().addPlayerPoint();
-                _audioPlayer.stop(); // Stop the audio player
+                Get.find<PlayersController>().addPlayerPoint(); // Use Get.find
+                _audioPlayer.stop();
                 Navigator.pop(context);
-                _isTimerActive = false; // Set the timer as inactive
-                _elapsedSeconds = 0; // Reset elapsed seconds
+                _isTimerActive = false;
+                _elapsedSeconds = 0;
                 _animationController?.reset();
-                context.read<PlayersBloc>().moveToNextPlayer(); // Move to the next player
+                Get.find<PlayersController>()
+                    .moveToNextPlayer(); // Use Get.find
               },
               child: const Text('Yes'),
             ),
             TextButton(
               onPressed: () {
-                _audioPlayer.stop(); // Stop the audio player
+                _audioPlayer.stop();
                 Navigator.pop(context);
-                _isTimerActive = false; // Set the timer as inactive
-                _elapsedSeconds = 0; // Reset elapsed seconds
+                _isTimerActive = false;
+                _elapsedSeconds = 0;
                 _animationController?.reset();
-                context.read<PlayersBloc>().moveToNextPlayer(); // Move to the next player
+                Get.find<PlayersController>()
+                    .moveToNextPlayer(); // Use Get.find
               },
               child: const Text('No'),
             ),
@@ -154,22 +157,23 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
         );
       },
     ).then((value) {
-      _playTickTockSound(false); // Stop the tick-tock sound when the dialog is dismissed
+      _playTickTockSound(false);
     });
   }
 
   void _playClockSound() async {
     _audioPlayer.dispose(); // Dispose of the previous audio player
     _audioPlayer = AudioPlayer(); // Create a new audio player instance
-    await _audioPlayer.play(AssetSource('sounds/Counter_effect.wav')); // Play the clock sound
+    await _audioPlayer
+        .play(AssetSource('sounds/Counter_effect.wav')); // Play the clock sound
   }
-
 
   void _playTickTockSound(bool play) async {
     if (play) {
       if (_tictocPlayer.state == PlayerState.stopped) {
         await _tictocPlayer.seek(Duration.zero); // Reset the audio position
-        await _tictocPlayer.play(AssetSource('sounds/tick_tock.wav')); // Play the preloaded tick-tock sound
+        await _tictocPlayer.play(AssetSource(
+            'sounds/tick_tock.wav')); // Play the preloaded tick-tock sound
       }
     } else {
       if (_tictocPlayer.state == PlayerState.playing) {
@@ -179,68 +183,74 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
     }
   }
 
-
-
   @override
   void dispose() {
     _audioPlayer.dispose();
-    _tictocPlayer.dispose();// Dispose the audio player when the widget is disposed
+    _tictocPlayer
+        .dispose(); // Dispose the audio player when the widget is disposed
     _timer?.cancel();
     _animationController?.dispose();
     super.dispose();
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     var size = MediaQuery.of(context).size;
     return SafeArea(
       child: Scaffold(
         backgroundColor: const Color(0xFFE8DEB2),
-        // backgroundColor: LightGoldColor,
         body: Column(
           children: [
-            BlocBuilder<PlayersBloc, List<PlayersInfo>>(
-              builder: (context, playersList) {
-                if (playersList.isEmpty) {
+            GetBuilder<PlayersController>(
+              builder: (controller) {
+                if (controller.playersList.isEmpty) {
                   return const Center(
                     child: Text('No players available'),
                   );
                 }
-                final currentPlayerName =
-                    context.watch<PlayersBloc>().getCurrentPlayerName();
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_back_ios),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const Text(
-                          "Question for ",
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 20),
-                        ),
-                        Text(
-                          "$currentPlayerName",
-                          style: const TextStyle(
-                              fontSize: 25,
-                              fontWeight: FontWeight.bold,
-                              color: GoldColor),
-                        )
-                      ],
-                    ),
-                    Image.asset(
-                      'assets/images/GoldLogo.png',
-                      width: 80,
-                      height: 80,
-                    ),
-                  ],
+                final currentPlayerName = controller.getCurrentPlayerName();
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        onPressed: () => Get.back(),
+                        icon: const Icon(Icons.arrow_back_ios),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const Text(
+                            "Question for ",
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 20),
+                          ),
+                          Text(
+                            "$currentPlayerName",
+                            style: const TextStyle(
+                                fontSize: 25,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.teal),
+                          ),
+
+                        ],
+                      ),
+                      Container(
+                        height:70,
+                        child: Image.asset("assets/images/GoldLogo.png"),
+                      )
+                    ],
+
+                  ),
                 );
               },
-            ),
+            ), // Image.asset(
+            //   'assets/images/GoldLogo.png',
+            //   width: 80,
+            //   height: 80,
+            // ),
             const SizedBox(height: 20),
             Expanded(
               child: Container(
@@ -391,39 +401,52 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
                                         ],
                                       ),
                                       child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
                                         mainAxisAlignment:
                                             MainAxisAlignment.spaceBetween,
                                         children: [
                                           IconButton(
-                                            icon: Icon(Icons.help_outline,
-                                                size: 40,
-                                                color: LightGoldColor),
+                                            icon: const Icon(
+                                              Icons.help_outline,
+                                              size: 45,
+                                              color: LightGoldColor,
+                                            ),
                                             onPressed: () {
                                               _showInstructionsDialog();
                                             },
                                           ),
-                                          Align(
+                                          const Align(
                                             alignment: Alignment.center,
                                             child: Text(
                                               "Tap To Reveal The Card",
                                               style: TextStyle(
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.bold,
-                                                color: LightGoldColor,
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: LightGoldColor),
+                                            ),
+                                          ),
+                                          Container(  child:
+                                              ElevatedButton(
+                                            onPressed: () => Get.toNamed("/Points"),
+                                            style: ElevatedButton.styleFrom(
+                                              primary: GoldColor,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(30),
                                               ),
                                             ),
-                                          ),
-
-                                          // Gesture Detector at the bottom
-                                          ElevatedButton(
-                                            child: Text("See The Points"),
-                                            onPressed: () =>
-                                                Navigator.pushNamed(
-                                                    context, "/Points"),
-                                            style: ElevatedButton.styleFrom(
-                                              primary: LightGoldColor,
+                                            child: Padding(
+                                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                              child: Text(
+                                                "Points",
+                                                style: TextStyle(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
                                             ),
-                                          ),
+                                          )  ),
                                         ],
                                       ),
                                     ),
@@ -470,7 +493,8 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          primary: _isTimerActive ? Colors.red : Colors.teal,
+                          backgroundColor:
+                              _isTimerActive ? Colors.red : Colors.teal,
                         ),
                         child: Text(
                           _isTimerActive ? 'Stop' : 'Start',

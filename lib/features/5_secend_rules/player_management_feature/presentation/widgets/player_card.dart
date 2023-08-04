@@ -7,13 +7,13 @@ import '../bloc/player_bloc.dart';
 
 class PlayerCard extends StatefulWidget {
   final PlayersInfo player;
-  final int playerIndex; // Added playerIndex parameter
+  final String playerId; // Add playerId parameter
   final Function(String) onNameChanged;
-  final Function(int) onDeletePlayer;
+  final Function(String) onDeletePlayer; // Change the parameter type
 
   PlayerCard({
     required this.player,
-    required this.playerIndex,
+    required this.playerId, // Pass the playerId
     required this.onNameChanged,
     required this.onDeletePlayer,
   });
@@ -29,6 +29,7 @@ class _PlayerCardState extends State<PlayerCard> {
   void initState() {
     super.initState();
     _textEditingController.text = widget.player.name;
+
   }
 
   @override
@@ -39,6 +40,7 @@ class _PlayerCardState extends State<PlayerCard> {
 
   @override
   Widget build(BuildContext context) {
+    _textEditingController.text = widget.player.name;
     return Container(
       margin: EdgeInsets.symmetric(vertical: 8),
       padding: EdgeInsets.all(16),
@@ -60,12 +62,10 @@ class _PlayerCardState extends State<PlayerCard> {
           ),
           IconButton(
             icon: Icon(Icons.delete),
-            color: _textEditingController.text.isNotEmpty ? Colors.red : Colors.grey[400],
-            onPressed: _textEditingController.text.isNotEmpty
-                ? () {
-              widget.onDeletePlayer(widget.playerIndex);
-            }
-                : null,
+            color: Colors.red,
+            onPressed: () {
+              widget.onDeletePlayer(widget.player.id);
+            },
           ),
         ],
       ),
