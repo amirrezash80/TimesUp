@@ -1,100 +1,123 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:scattegories/core/getx/language_getx.dart';
 import 'package:scattegories/core/widgets/main_drawer.dart';
 
 import '../core/utils/constants.dart';
 
 class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+  HomePage({super.key});
+
+  final languageController = Get.put(LanguageController());
 
   @override
   Widget build(BuildContext context) {
-    var size = MediaQuery.of(context).size;
+    var size = MediaQuery
+        .of(context)
+        .size;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).backgroundColor,
+
       appBar: AppBar(
         backgroundColor: GoldColor,
         centerTitle: true,
-       title: Text("Time's up"),
+        title: Text("Time's up"),
       ),
       drawer: MainDrawer(),
       body: Container(
-        color: GoldColor.withOpacity(0.3),
-        child: Column(
-          children: [
-            Container(
-              height: size.height*0.4,
-              child: Image.asset(
-                'assets/images/GoldLogo.png',
-                fit: BoxFit.fill,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+        child: Obx(
+              () =>
+              Column(
                 children: [
-                             Container(
-                    margin: EdgeInsets.only(left: 30, right: 30),
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: LightGoldColor,
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.white70.withOpacity(0.5),
-                          spreadRadius: 5,
-                          blurRadius: 7,
-                          offset: Offset(0, 3), // changes position of shadow
-                        ),
-                      ],
-                    ),
-                    alignment: Alignment.center,
-                    height: size.height * 0.1,
-                    child: TextButton(
-                      onPressed: () => Navigator.pushNamed(context, "/Players"),
-                      child: Text(
-                        "5 Second Rule",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 30,
-                            color: Colors.white),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Container(
+                      height: size.height * 0.4,
+                      child: Image.asset(
+                        Theme
+                            .of(context)
+                            .brightness == Brightness.light
+                            ? 'assets/images/GoldLogo.png'
+                            : 'assets/images/DarkLogo.png',
+                        fit: BoxFit.fill,
                       ),
                     ),
                   ),
-                  SizedBox(height: size.height*0.1),
-                  Container(
-                    margin: EdgeInsets.only(left: 30, right: 30),
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: LightGoldColor,
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.white.withOpacity(0.5),
-                          spreadRadius: 5,
-                          blurRadius: 7,
-                          offset: Offset(0, 3), // changes position of shadow
+                  Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          margin: EdgeInsets.only(left: 30, right: 30),
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: LightGoldColor,
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.white70.withOpacity(0.5),
+                                spreadRadius: 5,
+                                blurRadius: 7,
+                                offset: Offset(
+                                    0, 3), // changes position of shadow
+                              ),
+                            ],
+                          ),
+                          alignment: Alignment.center,
+                          height: size.height * 0.1,
+                          child: TextButton(
+                            onPressed: () =>
+                                Navigator.pushNamed(context, "/Players"),
+                            child: Text(
+                              languageController.isEnglish()
+                                  ? "5 Second Rule"
+                                  : "قانون ۵ ثانیه",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 30,
+                                  color: Colors.white),
+                            ),
+                          ),
                         ),
+                        SizedBox(height: size.height * 0.1),
+                        Container(
+                          margin: EdgeInsets.only(left: 30, right: 30),
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: LightGoldColor,
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.white.withOpacity(0.5),
+                                spreadRadius: 5,
+                                blurRadius: 7,
+                                offset: Offset(
+                                    0, 3), // changes position of shadow
+                              ),
+                            ],
+                          ),
+                          alignment: Alignment.center,
+                          height: size.height * 0.1,
+                          child: TextButton(
+                            onPressed: () =>
+                                Navigator.pushNamed(context, "/LetterPicker"),
+                            child: Text(
+                              languageController.isEnglish()
+                                  ? "Scattegories"
+                                  : "اسم و فامیل",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 30,
+                                  color: Colors.white),
+                            ),
+                          ),
+                        )
                       ],
                     ),
-                    alignment: Alignment.center,
-                    height: size.height * 0.1,
-                    child: TextButton(
-                      onPressed: () =>
-                          Navigator.pushNamed(context, "/LetterPicker"),
-                      child: Text(
-                        "Scattegories",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 30,
-                            color: Colors.white),
-                      ),
-                    ),
-                  )
+                  ),
                 ],
               ),
-            ),
-          ],
         ),
       ),
     );

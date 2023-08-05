@@ -3,9 +3,12 @@ import 'dart:ui';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:scattegories/core/utils/categories/english_questions.dart';
+import 'package:scattegories/core/utils/categories/farsi_quetions.dart';
 import 'package:scattegories/core/utils/constants.dart';
 
+import '../../../../../core/getx/language_getx.dart';
 import '../widgets/setting.dart';
 
 class Scattegories extends StatefulWidget {
@@ -17,13 +20,13 @@ class Scattegories extends StatefulWidget {
 
 class _ScattegoriesState extends State<Scattegories>
     with SingleTickerProviderStateMixin {
+  final languageController = Get.find<LanguageController>();
   late String pickedLetter = '';
   bool isStarted = false;
   bool showQuestions = false;
   int _elapsedSeconds = 0;
-  int timerDuration = 60; // Default timer duration, you can change this value
-  int numberOfCategories =
-      6; // Default number of categories, you can change this value
+  int timerDuration = 60;
+  int numberOfCategories = 6;
 
   Timer? _timer;
   int _secondsRemaining = 60;
@@ -31,14 +34,16 @@ class _ScattegoriesState extends State<Scattegories>
   AnimationController? _animationController;
   Animation<double>? _spinAnimation;
   bool _isCardRevealed = false;
-  List<String> randomCategories =
-      EnglishCategories.getRandomCategories(number: 6);
+  List<String> randomCategories = []; // Initialize as an empty list
   late AudioPlayer _audioPlayer;
   late AudioPlayer _tictocPlayer;
   bool _isMuted = false;
 
+  @override
   String generateRandomLetter() {
-    final alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    final alphabet = languageController.isEnglish.value
+        ? 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        : 'الفبپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی';
     final randomIndex = DateTime.now().millisecondsSinceEpoch % 26;
     return alphabet[randomIndex];
   }
@@ -47,6 +52,10 @@ class _ScattegoriesState extends State<Scattegories>
   @override
   void initState() {
     super.initState();
+    randomCategories = languageController.isEnglish.value
+        ? EnglishCategories.getRandomCategories(number: numberOfCategories)
+        : FarsiCategories.getRandomCategories(number: numberOfCategories);
+
     _audioPlayer = AudioPlayer();
     _tictocPlayer = AudioPlayer(); // Initialize _tictocPlayer
     _animationController =
@@ -95,8 +104,10 @@ class _ScattegoriesState extends State<Scattegories>
           _isCardRevealed = false;
 
 // Generate a new set of random categories based on the user's input
-          randomCategories =
-              EnglishCategories.getRandomCategories(number: numberOfCategories);
+          randomCategories = languageController.isEnglish.value
+              ? EnglishCategories.getRandomCategories(
+                  number: numberOfCategories)
+              : FarsiCategories.getRandomCategories(number: numberOfCategories);
 
           _showAlertDialog();
 
@@ -107,7 +118,7 @@ class _ScattegoriesState extends State<Scattegories>
     });
   }
 
-  void _showInstructionsDialog() {
+  void _showEnglishInstructionsDialog() {
     showDialog(
       context: context,
       builder: (context) {
@@ -141,6 +152,47 @@ class _ScattegoriesState extends State<Scattegories>
     );
   }
 
+  void _showFarsiInstructionsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: Directionality(
+            textDirection: TextDirection.rtl,
+            child: AlertDialog(
+              title: Text('دستورالعمل‌ها'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('1. برای شروع بازی، دکمه "شروع" را فشار دهید.'),
+                  Text('2. یک حرف تصادفی در بالا نمایش داده می‌شود.'),
+                  Text(
+                      '3. به سرعت به دسته‌بندی‌ها با کلماتی که با حرف نمایش داده شده شروع می‌شوند پاسخ دهید.'),
+                  Text(
+                      '4. تایمر شمارش معکوس را شروع کنید؛ قبل از پایان زمان پایان دهید!'),
+                  Text(
+                      '5. اگر نیاز به تنظیمات بازی دارید، دکمه "تنظیمات" را فشار دهید.'),
+                  Text(
+                      '6. دکمه "پایان" را برای پایان دادن بازی و مشاهده نتایج فشار دهید.'),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('قبول'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _showAlertDialog() {
     showDialog(
       context: context,
@@ -150,18 +202,29 @@ class _ScattegoriesState extends State<Scattegories>
         _playTickTockSound(false);
         _playClockSound(); // Play the clock sound here
         _timer?.cancel();
-        return AlertDialog(
-          title: Image.asset('assets/images/WhiteGoldLogo.png'),
-          content: Text('Your time is up.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                _audioPlayer.stop();
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: Text('OK'),
+        return Directionality(
+          textDirection: languageController.isEnglish.value
+              ? TextDirection.ltr
+              : TextDirection.rtl,
+          child: AlertDialog(
+            title: Image.asset(
+                Theme.of(context).brightness == Brightness.light?
+                'assets/images/WhiteGoldLogo.png' :
+'assets/images/DarkAlert.png'
             ),
-          ],
+            content: Text(languageController.isEnglish.value
+                ? 'Your time is up.'
+                : "وقت تمومه ! کاغذا بالا , قلما پایین  "),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  _audioPlayer.stop();
+                  Navigator.of(context).pop(); // Close the dialog
+                },
+                child: Text('OK'),
+              ),
+            ],
+          ),
         );
       },
     ).then((_) {
@@ -207,6 +270,15 @@ class _ScattegoriesState extends State<Scattegories>
     _animationController?.dispose();
     super.dispose();
   }
+  void restart(){
+    _tictocPlayer.stop();
+    _timer?.cancel();
+    _isTimerActive = false;
+    _animationController?.reset();
+    _secondsRemaining = timerDuration; // Reset the timer to user's input
+    isStarted = false;
+    showQuestions = false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -220,7 +292,9 @@ class _ScattegoriesState extends State<Scattegories>
           IconButton(
             icon: Icon(Icons.help_outline), // Add the instruction icon
             onPressed: () {
-              _showInstructionsDialog(); // Show instructions dialog
+              languageController.isEnglish.value
+                  ? _showEnglishInstructionsDialog()
+                  : _showFarsiInstructionsDialog();
             },
           ),
           IconButton(
@@ -228,164 +302,197 @@ class _ScattegoriesState extends State<Scattegories>
             onPressed: () {
               showSettingsDialog(context,
                   (newTimerDuration, newNumberOfCategories) {
+                restart();
                 updateSettings(newTimerDuration, newNumberOfCategories);
               });
             },
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.only(top: 50),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Letter: ',
-                  style: TextStyle(fontSize: 24),
-                ),
-                ImageFiltered(
-                  imageFilter: showQuestions
-                      ? ImageFilter.blur(sigmaX: 0, sigmaY: 0)
-                      : ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                  child: Text(
-                    pickedLetter,
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 30,
-                        color: GoldColor),
+      body: Directionality(
+        textDirection: languageController.isEnglish.value
+            ? TextDirection.ltr
+            : TextDirection.rtl,
+        child: Padding(
+          padding: const EdgeInsets.only(top: 50),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    languageController.isEnglish.value ? 'Letter: ' : "حرف : ",
+                    style: TextStyle(fontSize: 20),
                   ),
-                )
-              ],
-            ),
-            Center(
-              child: AnimatedBuilder(
-                animation: _animationController!,
-                builder: (context, child) {
-                  double lineWidth =
-                      (size.width - 80) / 2; // Adjust for clock icon width (80)
-                  if (_isTimerActive && _secondsRemaining > 0) {
-                    lineWidth *= (_secondsRemaining /
-                        timerDuration); // Use timerDuration instead of 5
-                  } else {
-                    lineWidth = 0.0;
-                  }
-
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Stack(
+                    alignment: Alignment.center,
                     children: [
-                      Container(
-                        width: lineWidth,
-                        height: 12,
-// Adjust line thickness here
-                        color: LightGoldColor,
-                      ),
-                      RotationTransition(
-                        turns: _spinAnimation!,
-                        child: Icon(
-                          Icons.access_time,
-                          size: 80,
-                          color: Colors.teal.shade700,
-                        ),
-                      ),
-                      Container(
-                        width: lineWidth,
-                        height: 12,
-// Adjust line thickness here
-                        color: LightGoldColor,
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              _isTimerActive ? '$_secondsRemaining seconds' : 'Press Start!',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: GoldColor,
-              ),
-            ),
-            Expanded(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: randomCategories.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Card(
-                      color: showQuestions
-                          ? GoldColor.withOpacity(0.6)
-                          : Colors.grey.withOpacity(0.3),
-                      elevation: 4,
-                      child: ImageFiltered(
-                        imageFilter: showQuestions
-                            ? ImageFilter.blur(sigmaX: 0, sigmaY: 0)
-                            : ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                        child: Container(
-                          height: 65,
-                          alignment: Alignment.center,
-                          child: Wrap(
-                            children: [
-                              Text(
-                                randomCategories[index],
-                                style: TextStyle(
-                                    fontSize: 24, fontWeight: FontWeight.bold),
-                              ),
-                            ],
+                      Opacity(
+                        opacity: !showQuestions ? 0.0 : 1.0,
+                        child: Text(
+                          pickedLetter,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 30,
+                            color: GoldColor,
                           ),
                         ),
                       ),
-                    ),
-                  );
-                },
+                      if (showQuestions)
+                        ImageFiltered(
+                          imageFilter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                          child: Text(
+                            pickedLetter,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 30,
+                              color: GoldColor,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
               ),
-            ),
-            SizedBox(height: 5),
-            Container(
-              width: size.width * 0.9,
-              height: 45,
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    if (!isStarted) {
-                      isStarted = true;
-                      _playTickTockSound(true);
-                      showQuestions = true;
-                      pickedLetter = generateRandomLetter();
-                      randomCategories = EnglishCategories.getRandomCategories(
-                          number: numberOfCategories);
-                      _isTimerActive = true;
-                      startTimer();
+              Center(
+                child: AnimatedBuilder(
+                  animation: _animationController!,
+                  builder: (context, child) {
+                    double lineWidth = (size.width - 80) /
+                        2; // Adjust for clock icon width (80)
+                    if (_isTimerActive && _secondsRemaining > 0) {
+                      lineWidth *= (_secondsRemaining /
+                          timerDuration); // Use timerDuration instead of 5
                     } else {
-                      _showAlertDialog();
-                      _tictocPlayer.stop();
-                      _timer?.cancel();
-                      _isTimerActive = false;
-                      _animationController?.reset();
-                      _secondsRemaining =
-                          timerDuration; // Reset the timer to user's input
-                      isStarted = false;
-                      showQuestions = false;
+                      lineWidth = 0.0;
                     }
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  primary: isStarted ? Colors.red : Colors.green,
-                ),
-                child: Text(
-                  isStarted ? 'Stop' : 'Start',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: lineWidth,
+                          height: 12,
+// Adjust line thickness here
+                          color: LightGoldColor,
+                        ),
+                        RotationTransition(
+                          turns: _spinAnimation!,
+                          child: Icon(
+                            Icons.access_time,
+                            size: 80,
+                            color: Colors.teal.shade700,
+                          ),
+                        ),
+                        Container(
+                          width: lineWidth,
+                          height: 12,
+// Adjust line thickness here
+                          color: LightGoldColor,
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 10),
+              Text(
+                _isTimerActive
+                    ? languageController.isEnglish.value
+                        ? '$_secondsRemaining seconds'
+                        : "  $_secondsRemaining ثانیه "
+                    : languageController.isEnglish.value
+                        ? 'Press Start!'
+                        : " بر روی شروع بازی کلیک کنید",
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: GoldColor,
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: randomCategories.length,
+                  itemBuilder: (context, index) {
+                    return ListTile(
+                      title: ImageFiltered(
+                        imageFilter: showQuestions
+                            ? ImageFilter.blur(sigmaX: 0, sigmaY: 0)
+                            : ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                        child: Card(
+                          color: showQuestions
+                              ? GoldColor.withOpacity(0.6)
+                              : Colors.grey.withOpacity(0.3),
+                          elevation: 4,
+                          child: Container(
+                            height: 65,
+                            alignment: Alignment.center,
+                            child: Wrap(
+                              children: [
+                                Text(
+                                  randomCategories[index],
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              SizedBox(height: 5),
+              Container(
+                width: size.width * 0.9,
+                height: 45,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      if (!isStarted) {
+                        isStarted = true;
+                        _playTickTockSound(true);
+                        showQuestions = true;
+                        pickedLetter = generateRandomLetter();
+                        randomCategories = languageController.isEnglish.value
+                            ? EnglishCategories.getRandomCategories(
+                                number: numberOfCategories)
+                            : FarsiCategories.getRandomCategories(
+                                number: numberOfCategories);
+
+                        _isTimerActive = true;
+                        startTimer();
+                      } else {
+                        _showAlertDialog();
+                        restart();
+                      }
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    primary: isStarted ? Colors.red : Colors.green,
+                  ),
+                  child: Text(
+                    isStarted
+                        ? languageController.isEnglish.value
+                            ? 'Stop'
+                            : " توقف "
+                        : languageController.isEnglish.value
+                            ? 'Start'
+                            : " شروع بازی ",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

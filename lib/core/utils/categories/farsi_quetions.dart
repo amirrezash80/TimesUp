@@ -179,11 +179,11 @@ class FarsiCategories{
   static void addCategory(String newCategory) {
     _categories.add(newCategory);
   }
-  static List<String> getRandomCategories() {
+  static List<String> getRandomCategories({required int number}) {
     final random = Random();
     final List<String> randomCategories = [];
 
-    while (randomCategories.length < 10) {
+    while (randomCategories.length < number) {
       final int randomIndex = random.nextInt(_categories.length);
       final String randomCategory = _categories[randomIndex];
 

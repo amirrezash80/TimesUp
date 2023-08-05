@@ -47,6 +47,14 @@ dependencies:
   soundpool: ^2.3.0
   audioplayers: ^5.0.0
   get: ^4.6.5
+  flutter_advanced_switch: ^3.0.1
+  country_icons: ^2.0.2
+  easy_dynamic_theme: ^2.3.1
+  adaptive_theme: ^3.3.0
+  persian_fonts: ^1.0.5
+  provider: ^6.0.5
+  day_night_switch: ^1.0.4
+  share_plus: ^7.1.0
 
 
 dev_dependencies:
@@ -77,12 +85,10 @@ flutter:
     - assets/images/WhiteGoldLogo.png
     - assets/images/SilverGoldLogo.png
     - assets/images/GoldBlackLogo.png
-    - assets/images/notebook_background.png
-    - assets/images/paper_background.png
     - assets/images/GoldLogo.png
-    - assets/images/roulette-8-300.png
-    - assets/images/roulette-center-300.png
-    - assets/images/wheel-6-300.png
+    - assets/images/BlueGreyLogo.png
+    - assets/images/DarkLogo.png
+    - assets/images/DarkAlert.png
     - assets/sounds/Counter_effect.wav
     - assets/sounds/tick_tock.wav
 

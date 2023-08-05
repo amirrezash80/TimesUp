@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../../../core/getx/language_getx.dart';
 import '../getx/player_getx.dart';
 import 'player_card.dart'; // Make sure to import your PlayerCard widget
 
 class PlayersList extends StatelessWidget {
   final PlayersController _playersController = Get.find();
+  final languageController = Get.find<LanguageController>();
 
   @override
   Widget build(BuildContext context) {
@@ -13,14 +15,6 @@ class PlayersList extends StatelessWidget {
       child: GetX<PlayersController>(
         builder: (controller) {
           final playersList = controller.playersList;
-          if (playersList.isEmpty) {
-            return Center(
-              child: Text(
-                'No players available',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            );
-          }
           return ListView.builder(
             itemCount: playersList.length + 1,
             itemBuilder: (context, index) {
@@ -47,7 +41,9 @@ class PlayersList extends StatelessWidget {
                       _playersController.addPlayer();
                     },
                     icon: Icon(Icons.add),
-                    label: Text("Add new player"),
+                    label: Text(
+                        languageController.isEnglish.value?
+                        "Add new player":"اضافه کردن بازیکن جدید"),
                     style: ElevatedButton.styleFrom(
                       primary: Colors.green,
                     ),

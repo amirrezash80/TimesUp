@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:scattegories/core/utils/constants.dart';
 
+import '../../../../../core/getx/language_getx.dart';
 import '../../../../../core/utils/categories/english_questions.dart';
+import '../../../../../core/utils/categories/farsi_quetions.dart';
 import '../../../player_management_feature/presentation/getx/player_getx.dart';
 
 class FiveSecondRules extends StatefulWidget {
@@ -18,6 +20,8 @@ class FiveSecondRules extends StatefulWidget {
 
 class _FiveSecondRulesState extends State<FiveSecondRules>
     with SingleTickerProviderStateMixin {
+  final languageController = Get.find<LanguageController>();
+
   Timer? _timer;
   int _secondsRemaining = 5;
   bool _isTimerActive = false;
@@ -28,10 +32,11 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
   Animation<double>? _spinAnimation;
   late AudioPlayer _audioPlayer;
   late AudioPlayer _tictocPlayer;
-
+  double _textsize = 30;
   @override
   void initState() {
     super.initState();
+    Get.put(PlayersController());
     _audioPlayer = AudioPlayer();
     _tictocPlayer = AudioPlayer();
     _animationController =
@@ -41,7 +46,9 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
     });
 
     // Generate the first set of random categories on initialization
-    randomCategories = EnglishCategories.getRandomCategories(number: 1);
+    randomCategories = languageController.isEnglish.value
+        ? EnglishCategories.getRandomCategories(number: 1)
+        : FarsiCategories.getRandomCategories(number: 1);
 
     _spinAnimation = Tween<double>(
       begin: 0.0,
@@ -52,6 +59,12 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
   void startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
+
+        if(_secondsRemaining % 2 == 0)
+          _textsize+=2;
+        if(_secondsRemaining % 2 == 1)
+          _textsize-=2;
+
         if (_secondsRemaining > 0) {
           _secondsRemaining--;
           _playTickTockSound(
@@ -66,7 +79,9 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
           _isCardRevealed = false;
 
           // Generate a new set of random categories
-          randomCategories = EnglishCategories.getRandomCategories(number: 1);
+          randomCategories = languageController.isEnglish.value
+              ? EnglishCategories.getRandomCategories(number: 1)
+              : FarsiCategories.getRandomCategories(number: 1);
 
           _showAlertDialog();
 
@@ -77,7 +92,7 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
     });
   }
 
-  void _showInstructionsDialog() {
+  void _showEnglishInstructionsDialog() {
     showDialog(
       context: context,
       builder: (context) {
@@ -105,7 +120,47 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text('OK'),
+              child: Text(languageController.isEnglish.value ? 'OK' : "قبول"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showFarsiInstructionsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('دستورالعمل‌ها'),
+          content: Directionality(
+            textDirection: TextDirection.rtl,
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('1. برای شروع بازی، دکمه "شروع" را فشار دهید.'),
+                Text('2. یک سوال تصادفی در وسط نمایش ظاهر می‌شود.'),
+                Text('3. به سرعت کارت را لمس کنید تا سوال نمایش داده شود.'),
+                Text('4. شما ۵ ثانیه برای پاسخ فرصت دارید.'),
+                Text('5. پس از ۵ ثانیه، اگر پاسخ درست باشد "بله" را بزنید.'),
+                Text(
+                    '6. اگر پاسخ نادرست باشد یا زمان تمام شده باشد، "خیر" را بزنید.'),
+                Text(
+                    '7. تایمر و کارت سوال با فشار دادن دکمه "شروع" می‌تواند متوقف یا ادامه یابد.'),
+                Text(
+                    '8. بازیکنان به تناوب نوبت می‌گیرند و امتیازات آن‌ها پیگیری می‌شود.'),
+                Text('9. برای مشاهده امتیازات، دکمه "امتیازات" را بزنید.'),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text(languageController.isEnglish.value ? 'OK' : "قبول"),
             ),
           ],
         );
@@ -124,9 +179,20 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
         _timer?.cancel();
         _playClockSound();
         return AlertDialog(
-          title: Image.asset('assets/images/WhiteGoldLogo.png'),
-          content: Text(
-              'Did $currentPlayerName get the answer right within 5 seconds?'),
+          title: Image.asset(
+              Theme.of(context).brightness == Brightness.light?
+              'assets/images/WhiteGoldLogo.png' :
+              'assets/images/DarkAlert.png'
+
+          ),
+          content: Directionality(
+            textDirection: languageController.isEnglish.value
+                ? TextDirection.ltr
+                : TextDirection.rtl,
+            child: Text(languageController.isEnglish.value
+                ? 'Did $currentPlayerName get the answer right within 5 seconds?'
+                : '$currentPlayerName تونست در عرض ۵ ثانیه جواب بده؟ '),
+          ),
           actions: [
             TextButton(
               onPressed: () {
@@ -199,7 +265,7 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
     var size = MediaQuery.of(context).size;
     return SafeArea(
       child: Scaffold(
-        backgroundColor: const Color(0xFFE8DEB2),
+        backgroundColor: Theme.of(context).backgroundColor, // Use the theme's background color
         body: Column(
           children: [
             GetBuilder<PlayersController>(
@@ -222,8 +288,10 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const Text(
-                            "Question for ",
+                          Text(
+                            languageController.isEnglish.value
+                                ? "Question for "
+                                : "سوال برای ",
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 20),
                           ),
@@ -234,23 +302,24 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
                                 fontWeight: FontWeight.bold,
                                 color: Colors.teal),
                           ),
-
                         ],
                       ),
                       Container(
-                        height:70,
-                        child: Image.asset("assets/images/GoldLogo.png"),
+                        height: 70,
+                        child: Image.asset(
+                          Theme.of(context).brightness == Brightness.light?
+                          'assets/images/GoldLogo.png' :
+                           'assets/images/DarkLogo.png',
+
+                          fit: BoxFit.fill,
+                        ),
                       )
                     ],
-
                   ),
                 );
               },
             ), // Image.asset(
-            //   'assets/images/GoldLogo.png',
-            //   width: 80,
-            //   height: 80,
-            // ),
+
             const SizedBox(height: 20),
             Expanded(
               child: Container(
@@ -309,8 +378,12 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
                           const SizedBox(height: 10),
                           Text(
                             _isTimerActive
-                                ? '$_secondsRemaining seconds'
-                                : 'Press the Start!',
+                                ? languageController.isEnglish.value
+                                    ? '$_secondsRemaining seconds'
+                                    : '  ثانیه $_secondsRemaining'
+                                : languageController.isEnglish.value
+                                    ? 'Press the Start!'
+                                    : 'بر روی شروع بازی کلیک کنید',
                             style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -356,28 +429,47 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
                                           color: Colors.black,
                                           fontSize: 30,
                                         ),
-                                        child: Wrap(
-                                          children: [
-                                            const Center(
-                                              child: Text("Name 3"),
-                                            ),
-                                            const Divider(),
-                                            Align(
-                                              alignment: Alignment.center,
-                                              child: AnimatedTextKit(
-                                                repeatForever: true,
-                                                isRepeatingAnimation: true,
-                                                animatedTexts: [
-                                                  ColorizeAnimatedText(
-                                                    randomCategories.first,
-                                                    textStyle:
-                                                        colorizeTextStyle,
-                                                    colors: colorizeColors,
-                                                  ),
-                                                ],
+                                        child: Directionality(
+                                          textDirection:languageController
+                                              .isEnglish.value? TextDirection.ltr:TextDirection.rtl,
+                                          child: Wrap(
+                                            children: [
+                                              Center(
+                                                child: Text(languageController
+                                                        .isEnglish.value
+                                                    ? "Name 3"
+                                                    : " نام ببر ۳ تا از" , style: TextStyle(
+                                                  color: Colors.black54
+                                                ),),
                                               ),
-                                            ),
-                                          ],
+                                              const Divider(),
+                                              Align(
+                                                alignment: Alignment.center,
+
+                                                child:AnimatedDefaultTextStyle(
+                                                  duration: Duration(milliseconds: 1000),
+                                                  style: TextStyle(fontSize: _textsize , fontWeight: FontWeight.bold ,color: Colors.black),
+                                                  child: Text(randomCategories.first),
+                                                ),
+
+
+
+                                // child: AnimatedTextKit(
+                                //   pause: Duration(milliseconds: 1000),
+                                //                 repeatForever: true,
+                                //                 isRepeatingAnimation: true,
+                                //                 animatedTexts: [
+                                //                   ColorizeAnimatedText(
+                                //                     randomCategories.first,
+                                //                     textStyle:
+                                //                         colorizeTextStyle,
+                                //                     colors: colorizeColors,
+                                //                   ),
+                                //                 ],
+                                //               ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     )
@@ -413,32 +505,44 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
                                               color: LightGoldColor,
                                             ),
                                             onPressed: () {
-                                              _showInstructionsDialog();
+                                              languageController.isEnglish.value
+                                                  ? _showEnglishInstructionsDialog()
+                                                  : _showFarsiInstructionsDialog();
                                             },
                                           ),
-                                          const Align(
+                                          Align(
                                             alignment: Alignment.center,
                                             child: Text(
-                                              "Tap To Reveal The Card",
+                                              languageController.isEnglish.value
+                                                  ? "Tap To Reveal The Card"
+                                                  : "برای مشاهده سوال کلیک کنید",
                                               style: TextStyle(
-                                                  fontSize: 20,
+                                                  fontSize: 16,
                                                   fontWeight: FontWeight.bold,
                                                   color: LightGoldColor),
                                             ),
                                           ),
-                                          Container(  child:
-                                              ElevatedButton(
-                                            onPressed: () => Get.toNamed("/Points"),
+                                          Container(
+                                              child: ElevatedButton(
+                                            onPressed: () =>
+                                                Get.toNamed("/Points"),
                                             style: ElevatedButton.styleFrom(
                                               primary: GoldColor,
                                               shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(30),
+                                                borderRadius:
+                                                    BorderRadius.circular(30),
                                               ),
                                             ),
                                             child: Padding(
-                                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 20,
+                                                      vertical: 10),
                                               child: Text(
-                                                "Points",
+                                                languageController
+                                                        .isEnglish.value
+                                                    ? "Points"
+                                                    : "امتیازات",
                                                 style: TextStyle(
                                                   fontSize: 18,
                                                   fontWeight: FontWeight.bold,
@@ -446,7 +550,7 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
                                                 ),
                                               ),
                                             ),
-                                          )  ),
+                                          )),
                                         ],
                                       ),
                                     ),
@@ -467,8 +571,11 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
                           if (_isTimerActive) {
                             // Stop the timer and show the dialog
                             randomCategories =
-                                EnglishCategories.getRandomCategories(
-                                    number: 1);
+                                languageController.isEnglish.value
+                                    ? EnglishCategories.getRandomCategories(
+                                        number: 1)
+                                    : FarsiCategories.getRandomCategories(
+                                        number: 1);
 
                             _tictocPlayer.stop();
                             _isCardRevealed = false;
@@ -497,7 +604,13 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
                               _isTimerActive ? Colors.red : Colors.teal,
                         ),
                         child: Text(
-                          _isTimerActive ? 'Stop' : 'Start',
+                          _isTimerActive
+                              ? languageController.isEnglish.value
+                                  ? 'Stop'
+                                  : "توقف"
+                              : languageController.isEnglish.value
+                                  ? 'Start'
+                                  : 'شروع بازی',
                           style: const TextStyle(fontSize: 25),
                         ),
                       ),
