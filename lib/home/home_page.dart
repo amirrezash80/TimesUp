@@ -105,7 +105,7 @@ class HomePage extends StatelessWidget {
                             child: Text(
                               languageController.isEnglish()
                                   ? "Scattegories"
-                                  : "اسم و فامیل",
+                                  : "شکار کلمات",
                               style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 30,

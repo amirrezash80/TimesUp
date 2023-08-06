@@ -205,7 +205,8 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
                 Get.find<PlayersController>()
                     .moveToNextPlayer(); // Use Get.find
               },
-              child: const Text('Yes'),
+              child:  Text(languageController.isEnglish.value?
+              'Yes' : "آره"),
             ),
             TextButton(
               onPressed: () {
@@ -217,8 +218,10 @@ class _FiveSecondRulesState extends State<FiveSecondRules>
                 Get.find<PlayersController>()
                     .moveToNextPlayer(); // Use Get.find
               },
-              child: const Text('No'),
-            ),
+              child:  Text(languageController.isEnglish.value?
+        'No' : "نه"),
+        ),
+
           ],
         );
       },

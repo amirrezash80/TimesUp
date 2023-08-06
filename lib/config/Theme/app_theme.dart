@@ -8,7 +8,7 @@ final darkTheme = ThemeData(
   dividerColor: Colors.black12,
   backgroundColor: Color(0xFF303030),
   colorScheme: ColorScheme.dark(
-    primary: Colors.blueGrey,
+    primary: GoldColor,
     background:  Colors.black,
   ),
 );
@@ -21,7 +21,7 @@ final lightTheme = ThemeData(
   hintColor: Colors.black,
   dividerColor: Colors.white54,
   colorScheme: ColorScheme.light(
-    primary: Colors.grey,
+    primary: GoldColor,
     background: const Color(0xFFE8DEB2),
   ),
 );

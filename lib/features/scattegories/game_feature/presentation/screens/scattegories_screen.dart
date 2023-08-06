@@ -221,8 +221,10 @@ class _ScattegoriesState extends State<Scattegories>
                   _audioPlayer.stop();
                   Navigator.of(context).pop(); // Close the dialog
                 },
-                child: Text('OK'),
-              ),
+                child:  Text(languageController.isEnglish.value?
+                'Ok' : "باشه"),
+        ),
+
             ],
           ),
         );
@@ -287,7 +289,8 @@ class _ScattegoriesState extends State<Scattegories>
       appBar: AppBar(
         backgroundColor: GoldColor,
         centerTitle: true,
-        title: Text('Scattegories'),
+        title: Text(              languageController.isEnglish.value
+            ?'Scattegories': "شکار کلمات"),
         actions: [
           IconButton(
             icon: Icon(Icons.help_outline), // Add the instruction icon
